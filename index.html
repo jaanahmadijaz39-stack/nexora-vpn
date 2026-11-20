@@ -1,0 +1,360 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+<link rel="manifest" href="manifest.json">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#071729">
+<title>Nexora VPN</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#071729;color:white;
+ font-family:Arial,sans-serif;
+ min-height:100vh;
+}
+header{
+ display:flex;align-items:center;justify-content:space-between;
+ padding:20px 18px;
+}
+.logo{font-size:22px;font-weight:900;letter-spacing:1px}
+.logo span{color:#22d3ee}
+.icon-btn{
+ background:#12334b;color:white;border:0;
+ padding:11px 14px;border-radius:12px;font-size:17px
+}
+main{padding:10px 18px 100px;max-width:520px;margin:auto}
+.screen{display:none}
+.screen.active{display:block}
+.welcome{text-align:center;margin-top:18px}
+.welcome h2{font-size:25px;margin-bottom:7px}
+.muted{color:#91a9bc;font-size:13px}
+.status{
+ display:inline-block;padding:8px 16px;
+ border-radius:30px;background:#24384c;
+ color:#fbbf24;font-size:12px;font-weight:bold;
+ margin:20px 0 22px;
+}
+.status.connected{background:#103d35;color:#4ade80}
+.power{
+ width:175px;height:175px;border-radius:50%;
+ border:3px solid #20c9ed;
+ margin:0 auto;display:flex;align-items:center;
+ justify-content:center;
+ background:radial-gradient(circle,#12456c,#09213a 70%);
+ box-shadow:0 0 35px #087ca966;
+ color:#27d8f4;font-size:65px;
+ cursor:pointer;transition:.2s;
+}
+.power:active{transform:scale(.96)}
+.connect-title{text-align:center;font-size:23px;margin:18px 0 5px}
+.server-card,.card{
+ background:#102b43;border:1px solid #1d4561;
+ border-radius:17px;padding:17px;margin-top:22px;
+}
+.server-card{display:flex;align-items:center;gap:12px;cursor:pointer}
+.flag{font-size:30px}
+.server-info{flex:1}
+.server-info small,.card small{color:#91a9bc}
+.arrow{color:#22d3ee;font-size:23px}
+.stats{
+ display:grid;grid-template-columns:1fr 1fr;gap:12px;
+ margin-top:14px;
+}
+.stat{
+ background:#102b43;padding:17px;border-radius:15px;
+ text-align:center;
+}
+.stat small{color:#91a9bc}
+.stat strong{display:block;font-size:19px;margin-top:9px}
+.primary{
+ background:linear-gradient(100deg,#087ef5,#10c8e9);
+ color:white;border:0;border-radius:15px;
+ padding:16px;width:100%;font-size:16px;
+ font-weight:bold;margin-top:20px;cursor:pointer;
+}
+.secondary{
+ background:#12334b;color:#d9eaf5;border:1px solid #24516c;
+ border-radius:12px;padding:13px;cursor:pointer;
+}
+.section-title{font-size:23px;margin-top:25px}
+.item{
+ display:flex;align-items:center;gap:13px;
+ padding:17px;background:#102b43;
+ border-radius:14px;margin-top:12px;cursor:pointer;
+}
+.item .details{flex:1}
+.item small{display:block;color:#91a9bc;margin-top:5px}
+.item .check{color:#22d3ee}
+nav{
+ position:fixed;bottom:0;left:0;right:0;
+ display:flex;justify-content:space-around;
+ background:#091e31;border-top:1px solid #1d4561;
+ padding:12px 3px calc(12px + env(safe-area-inset-bottom));
+}
+nav button{
+ border:0;background:none;color:#8199ad;
+ font-size:11px;cursor:pointer;
+}
+nav button span{display:block;font-size:21px;margin-bottom:5px}
+nav button.active{color:#22d3ee}
+.setting{
+ display:flex;justify-content:space-between;
+ align-items:center;padding:16px 0;
+ border-bottom:1px solid #244056;
+}
+.plan{
+ border:1px solid #1b5472;background:#102b43;
+ padding:20px;border-radius:17px;margin-top:15px;
+}
+.plan h3{margin-top:0}
+.price{font-size:28px;font-weight:bold;color:#22d3ee}
+.note{
+ color:#91a9bc;font-size:12px;line-height:1.6;
+ margin-top:25px;text-align:center;
+}
+button:focus-visible{outline:2px solid #22d3ee}
+</style>
+</head>
+
+<body><script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .then(() => console.log("Nexora PWA ready"))
+      .catch(error => console.log(error));
+  });
+}
+</script>
+
+<header>
+ <div class="logo">NEXORA <span>VPN</span></div>
+ <button class="icon-btn" onclick="show('settings')">⚙</button>
+</header>
+
+<main>
+
+<!-- HOME -->
+<section id="home" class="screen active">
+ <div class="welcome">
+  <h2>Your Internet.<br> Your Control.</h2>
+  <p class="muted">Welcome to Nexora VPN</p>
+  <div id="status" class="status">● DISCONNECTED</div>
+
+  <div class="power" onclick="toggleVPN()">⏻</div>
+  <div id="connectTitle" class="connect-title">Tap to Connect</div>
+  <p class="muted" id="connectInfo">Demo interface • No VPN tunnel</p>
+ </div>
+
+ <div class="server-card" onclick="show('locations')">
+  <div class="flag" id="homeFlag">🇩🇪</div>
+  <div class="server-info">
+   <small>SELECTED LOCATION</small>
+   <strong id="homeServer">Germany</strong>
+  </div>
+  <div class="arrow">›</div>
+ </div>
+
+ <div class="stats">
+  <div class="stat">
+   <small>DOWNLOAD</small>
+   <strong id="download">-- Mbps</strong>
+  </div>
+  <div class="stat">
+   <small>UPLOAD</small>
+   <strong id="upload">-- Mbps</strong>
+  </div>
+ </div>
+
+ <button class="primary" onclick="toggleVPN()" id="mainButton">
+  CONNECT
+ </button>
+</section>
+
+<!-- LOCATIONS -->
+<section id="locations" class="screen">
+ <h2 class="section-title">Server Locations</h2>
+ <p class="muted">Choose your preferred demo location</p>
+ <div id="serverList"></div>
+</section>
+
+<!-- STATISTICS -->
+<section id="stats" class="screen">
+ <h2 class="section-title">Statistics</h2>
+ <div class="card">
+  <small>SESSION DURATION</small>
+  <h2 id="duration">00:00:00</h2>
+ </div>
+ <div class="stats">
+  <div class="stat"><small>DOWNLOAD</small><strong>--</strong></div>
+  <div class="stat"><small>UPLOAD</small><strong>--</strong></div>
+ </div>
+ <div class="card">
+  <h3>Connection information</h3>
+  <p class="muted">This prototype does not route internet traffic or measure real VPN speed.</p>
+ </div>
+</section>
+
+<!-- SETTINGS -->
+<section id="settings" class="screen">
+ <h2 class="section-title">Settings</h2>
+ <div class="card">
+  <div class="setting"><span>App Version</span><strong>1.0.0</strong></div>
+  <div class="setting"><span>Theme</span><strong>Dark</strong></div>
+  <div class="setting"><span>Connection</span><strong>Demo mode</strong></div>
+  <div class="setting"><span>Privacy</span><strong>Not connected</strong></div>
+ </div>
+ <div class="card">
+  <h3>About Nexora</h3>
+  <p class="muted">Your Internet. Your Control.</p>
+  <p class="muted">Nexora VPN is currently under development.</p>
+ </div>
+ <button class="secondary" onclick="show('premium')" style="width:100%;margin-top:15px">
+  View Premium Plans
+ </button>
+</section>
+
+<!-- PREMIUM -->
+<section id="premium" class="screen">
+ <h2 class="section-title">Nexora Premium</h2>
+ <p class="muted">Explore our planned subscription options.</p>
+ <div class="plan">
+  <h3>FREE PLAN</h3>
+  <div class="price">Rs. 0</div>
+  <p class="muted">Basic features (planned)</p>
+  <button class="secondary" style="width:100%">Current demo plan</button>
+ </div>
+ <div class="plan">
+  <h3>PREMIUM PLAN</h3>
+  <div class="price">Coming soon</div>
+  <p class="muted">More locations and premium features (planned)</p>
+  <button class="primary" onclick="alert('Premium subscriptions are not available yet.')">
+   Coming Soon
+  </button>
+ </div>
+ <p class="note">No payments are collected in this prototype.</p>
+</section>
+
+</main>
+
+<nav>
+ <button class="active" onclick="show('home',this)"><span>⌂</span>Home</button>
+ <button onclick="show('locations',this)"><span>◎</span>Locations</button>
+ <button onclick="show('stats',this)"><span>▥</span>Stats</button>
+ <button onclick="show('settings',this)"><span>⚙</span>Settings</button>
+</nav>
+
+<script>
+const servers=[
+ {name:"Germany",flag:"🇩🇪"},
+ {name:"United States",flag:"🇺🇸"},
+ {name:"United Kingdom",flag:"🇬🇧"},
+ {name:"France",flag:"🇫🇷"},
+ {name:"Netherlands",flag:"🇳🇱"}
+];
+
+let selected=servers[0];
+let connected=false;
+let seconds=0;
+let timer=null;
+
+function show(id,button){
+ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+
+ if(button){
+  document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+  button.classList.add("active");
+ }else{
+  document.querySelectorAll("nav button").forEach(b=>{
+   b.classList.toggle("active",b.textContent.toLowerCase().includes(id));
+  });
+ }
+}
+
+function renderServers(){
+ const list=document.getElementById("serverList");
+ list.innerHTML="";
+
+ servers.forEach(server=>{
+  const div=document.createElement("div");
+  div.className="item";
+  const name=document.createElement("strong");
+  name.textContent=server.name;
+  const flag=document.createElement("span");
+  flag.className="flag";
+  flag.textContent=server.flag;
+  const details=document.createElement("div");
+  details.className="details";
+  details.append(name);
+  const sub=document.createElement("small");
+  sub.textContent="Demo location • Not connected";
+  details.append(sub);
+  const check=document.createElement("span");
+  check.className="check";
+  check.textContent=selected.name===server.name?"✓":"›";
+  div.append(flag,details,check);
+  div.onclick=()=>selectServer(server);
+  list.append(div);
+ });
+}
+
+function selectServer(server){
+ if(connected){
+  alert("Disconnect before changing the demo server.");
+  return;
+ }
+ selected=server;
+ document.getElementById("homeFlag").textContent=server.flag;
+ document.getElementById("homeServer").textContent=server.name;
+ renderServers();
+ show("home");
+}
+
+function toggleVPN(){
+ if(connected){
+  disconnect();
+ }else{
+  connect();
+ }
+}
+
+function connect(){
+ connected=true;
+ seconds=0;
+ document.getElementById("status").textContent="● DEMO CONNECTED";
+ document.getElementById("status").classList.add("connected");
+ document.getElementById("connectTitle").textContent="Demo Connected";
+ document.getElementById("connectInfo").textContent="Simulated connection only";
+ document.getElementById("mainButton").textContent="DISCONNECT";
+ document.getElementById("download").textContent="Demo";
+ document.getElementById("upload").textContent="Demo";
+
+ timer=setInterval(()=>{
+  seconds++;
+  const h=String(Math.floor(seconds/3600)).padStart(2,"0");
+  const m=String(Math.floor(seconds%3600/60)).padStart(2,"0");
+  const s=String(seconds%60).padStart(2,"0");
+  document.getElementById("duration").textContent=h+":"+m+":"+s;
+ },1000);
+}
+
+function disconnect(){
+ connected=false;
+ clearInterval(timer);
+ document.getElementById("status").textContent="● DISCONNECTED";
+ document.getElementById("status").classList.remove("connected");
+ document.getElementById("connectTitle").textContent="Tap to Connect";
+ document.getElementById("connectInfo").textContent="Demo interface • No VPN tunnel";
+ document.getElementById("mainButton").textContent="CONNECT";
+ document.getElementById("download").textContent="-- Mbps";
+ document.getElementById("upload").textContent="-- Mbps";
+ document.getElementById("duration").textContent="00:00:00";
+}
+
+renderServers();
+</script>
+</body>
+</html>
